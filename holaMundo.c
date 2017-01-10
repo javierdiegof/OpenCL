@@ -74,7 +74,12 @@ int main(){
         exit(1);
     }
 
+    // Crear kernel
+    cl_kernel kernel = clCreateKernel(program, "hello", &err);
+    if(err < 0) error("");-
 
+    clReleaseKernel(kernel);
+    clReleaseProgram(program);
     clReleaseContext(context);
     return 0;
 }
