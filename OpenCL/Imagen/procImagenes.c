@@ -164,6 +164,35 @@ int main (int argc, char* argv[]){
 	descriptor.num_samples = 0; 						// Debe ser 0
 	descriptor.buffer = NULL; 							// N/A si es imagen 2D
 	
+	// Crear imagen de entrada y de salida 
+	cl_mem d_input_image = clCreateImage(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, &rgba_format, &descriptor, image,&err);
+	if(err < 0) error("Error al crear la imagen de entrada\n");
+	cl_mem d_output_image = clCreateImage(context, CL_MEM_WRITE_ONLY, &rgba_format, &descriptor, NULL,&err);
+	if(err < 0) error("Error al crear la imagen de salida\n");
+	
+	// Asignar argumentos
+	err = clSetKernelArg(kernel, 0, sizeof(d_input_image), &d_input_image);
+	if(err < 0) error("Error al asignar la imagen de entrada al kernel.\n");
+	err = clSetKernelArg(kernel, 1, sizeof(d_output_image), &d_output_image);
+	if(err < 0) error("Error al asignar la imagen de salida al kernel.\n");
+	
+	// Encolar kernel 
+	size_t dim = 2;
+	size_t global_size[] = {100,100};
+	size_t local_size[] = {1,1};
+	size_t offset[] = {0,0};
+	
+	// Ejecutar el kernel 
+	err = clEnqueueNDRangeKernel(command_queue, kernel, dim, offset, global_size, local_size, 0, NULL, NULL);
+	if(err < 0)error("Error al encolar.\n");
+	
+
+	// Leer la imagen desde el device al host 
+	size_t origen[] = {0,0,0}, region[] = {ancho,alto,1};
+	err = clEnqueueReadImage(command_queue, d_output_image, CL_TRUE, origen, region, 0, 0, image,0, NULL, NULL);
+	if(err < 0 ) error("Error al encolar la imagen");
+	clReleaseMemObject(d_input_image);
+	clReleaseMemObject(d_output_image);
 	clReleaseCommandQueue(command_queue);
     clReleaseKernel(kernel);
     clReleaseProgram(program);
